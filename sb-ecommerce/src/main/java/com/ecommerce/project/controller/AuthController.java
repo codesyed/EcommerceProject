@@ -21,10 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
@@ -51,6 +48,12 @@ public class AuthController {
     //Used in Sing up
     //Used to Check whether particular Role Exists in DB or not Before assigning to user.
     RoleRepository roleRepository;
+
+    @GetMapping("/check")
+    public String checkBodyWithGET(@RequestBody String name){
+        System.out.println("Get Working!!!");
+        return "/check is working";
+    }
 
     @PostMapping(value = "/signin")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
