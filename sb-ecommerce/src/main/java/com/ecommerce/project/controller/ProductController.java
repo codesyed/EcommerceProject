@@ -69,7 +69,9 @@ public class ProductController {
 
     @DeleteMapping("/admin/products/{productId}")
     public ResponseEntity<ProductDTO> deleteProduct(@PathVariable Long productId){
+        System.out.println("**BEFORE DELETE**");
         ProductDTO savedProductDTO = productService.deleteService(productId);
+        System.out.println("**AFTER DELETE**");
         return new ResponseEntity<>(savedProductDTO, HttpStatus.OK);
     }
 

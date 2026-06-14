@@ -140,6 +140,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/admin/**")
                                 .hasRole("ADMIN")
 
+
                                 //It's Authentication not Authorization
                                 //Just Check Correctness of JwtToken & No more.
                                 .anyRequest().authenticated()

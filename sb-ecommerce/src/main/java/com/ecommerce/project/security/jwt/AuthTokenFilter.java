@@ -77,6 +77,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authenticationObject);
 
                 logger.debug("*Roles from JWT: {}", userDetails.getAuthorities());
+                System.out.println("**jwt validtion filter ended**");
             }
             else{
                 //----> DO NOTHING : No valid JWT token found.

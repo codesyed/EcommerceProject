@@ -38,7 +38,7 @@ public class AuthController {
 
     @Autowired
     //Directly adding userRepo in Controller for Easyness.
-    //Its better to have AuthService for Industry Grade Appl.
+    //it's better to have AuthService for Industry Grade Appl.
     UserRepository userRepository; //For SignUP Duplication check
 
     @Autowired //Used in SignUp - To store Passwd of user as Encrypted
@@ -49,10 +49,40 @@ public class AuthController {
     //Used to Check whether particular Role Exists in DB or not Before assigning to user.
     RoleRepository roleRepository;
 
-    @GetMapping("/check")
-    public String checkBodyWithGET(@RequestBody String name){
-        System.out.println("Get Working!!!");
-        return "/check is working";
+    @GetMapping("/username")
+    public String currentLoggedInUserName(){
+
+        /* MIMP Way To get AuthenticationObject of CurrentLoggedIn User From SpringContext */
+        Authentication authenticationObject =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if(authenticationObject==null) return "No User Logged in!!!";
+        return authenticationObject.getName();
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<?> currentLoggedInUserDetails(){
+
+        /* MIMP Way To get AuthenticationObject of CurrentLoggedIn User From SpringContext */
+        Authentication authenticationObject =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if(authenticationObject==null) return ResponseEntity.ok("No User Logged in!!!");
+
+        UserDetailsImp userDetailsImp = (UserDetailsImp) authenticationObject.getPrincipal();
+
+        //Getting all roles as list
+        List<String> roles = userDetailsImp
+                .getAuthorities()
+                .stream()
+                .map(x -> x.getAuthority())
+                .toList();
+
+        String userName = userDetailsImp.getUsername();
+        Long userId = userDetailsImp.getId();
+
+        LoginResponse loginResponse =  new LoginResponse(userId, "Check Cookies for Token!" , userName, roles);
+        return ResponseEntity.ok(loginResponse);
     }
 
     @PostMapping(value = "/signin")
