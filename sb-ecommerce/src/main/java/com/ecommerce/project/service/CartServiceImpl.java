@@ -11,6 +11,8 @@ import com.ecommerce.project.repositories.CartItemRepository;
 import com.ecommerce.project.repositories.CartRepository;
 import com.ecommerce.project.repositories.ProductRepository;
 import com.ecommerce.project.util.AuthUtil;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -171,9 +173,14 @@ public class CartServiceImpl implements CartService{
         Stream<Product> productStream =
                 cartItems.stream()
                         .map(cartItem-> {
+
                                     Product p = cartItem.getProduct();
                                     //Quantity inside Product is what is in Stock NOT user carts Quantity
                                     p.setQuantity(cartItem.getQuantityPurchased());
+                                    //Here though we are updating product which we fetched from database!
+                                    //Will not affect DB unless we do productRepo.save(p) because @Transactional is not used!
+                                    //Here NO PERSISTENCE context and 'p' will destroy when method ends WITHOUT UPDATING DB!
+
                                     return p;
                                 }
                         );
@@ -186,6 +193,75 @@ public class CartServiceImpl implements CartService{
                         .toList();
 
         cartDTO.setProducts(productDTOS);
+        return cartDTO;
+    }
+
+    @Override
+    @Transactional
+    public CartDTO updateProductQuantityInUserCart(Long productId, Integer updateQuantity) {
+        /*
+            -> find cart if exists other wises excpetion
+            -> find product/cartItem if exists in cart otehrwise exception
+            -> check validation for the new coming updation quantity with quatnity in stock for product
+            -> update product/cartItem quantity
+                -> after updation if qaantity = 0 delete cartItem/prodcut form cart
+            -> otherwise savethe updated cartItem
+            -> save cart
+            -> create cartDTO.........
+         */
+
+        String email=authUtil.loggedInEmail();
+        Cart cart = cartRepository.findCartByUserEmail(email);
+
+        if(cart==null)
+            throw new ResourceNotFoundException("Cart", "email", email);
+
+        Long cartId = cart.getCartId();
+
+        Product product= productRepository.findById(productId)
+                .orElseThrow(()-> new ResourceNotFoundException("Product Not Exists in E-COM Service", "productId", productId));;
+
+        CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(productId, cartId);
+
+        if(cartItem==null)
+            throw new ResourceNotFoundException("This Item doesn't exists in your Cart", "productId", productId);
+
+        int finalQuantity = cartItem.getQuantityPurchased() + updateQuantity;
+
+        if(finalQuantity > product.getQuantity())
+            throw new APIException("Max Quantity in stock for this product is : "+product.getQuantity());
+
+        Double updatedCartPrice =
+                        cart.getTotalPrice()
+                        + (cartItem.getProductPrice() * updateQuantity);
+        cart.setTotalPrice(updatedCartPrice);
+
+        if(finalQuantity<=0) {
+            //We have used orphan removal = ture in Cart therefore cartItem will automatically deleted
+            boolean flag=cart.getCartItemList().remove(cartItem); //We have used orphan removal = ture in Cart
+            boolean flag2 = product.getCartItemList().remove(cartItem);
+            System.out.println("product.getCartItemList().remove(cartItem)"+flag2);
+            System.out.println("*****Executed: cart.getCartItemList().remove(cartItem)-> "+flag);
+        }
+        else{
+            cartItem.setQuantityPurchased(finalQuantity);
+        }
+
+        Cart updatedCart = cart;
+        CartDTO cartDTO=modelMapper.map(updatedCart, CartDTO.class);
+
+        List<ProductDTO> productDTOList  =
+                updatedCart.getCartItemList()
+                .stream()
+                .map(Citem -> {
+                    Product p = Citem.getProduct();
+                    ProductDTO productDTO = modelMapper.map(p, ProductDTO.class);
+                            productDTO.setQuantity(Citem.getQuantityPurchased());
+                    return productDTO;
+                })
+                .toList();
+
+        cartDTO.setProducts(productDTOList);
         return cartDTO;
     }
 
