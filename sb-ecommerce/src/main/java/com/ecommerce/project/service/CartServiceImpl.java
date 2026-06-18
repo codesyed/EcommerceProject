@@ -265,6 +265,49 @@ public class CartServiceImpl implements CartService{
         return cartDTO;
     }
 
+    @Override
+    public CartDTO deleteProductFromCart(Long productId) {
+        String email=authUtil.loggedInEmail();
+        Cart cart = cartRepository.findCartByUserEmail(email);
+
+        if(cart==null)
+            throw new ResourceNotFoundException("Cart", "email", email);
+
+        Long cartId = cart.getCartId();
+
+        Product product= productRepository.findById(productId)
+                .orElseThrow(()-> new ResourceNotFoundException("Product Not Exists in E-COM Service", "productId", productId));;
+
+        CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(productId, cartId);
+
+        if(cartItem==null)
+            throw new ResourceNotFoundException("This Item doesn't exists in your Cart", "productId", productId);
+
+        cart.getCartItemList().remove(cartItem);
+        product.getCartItemList().remove(cartItem);
+        cartItemRepository.deleteCartItemByCartIdAndProductId(cart.getCartId(), product.getProductId());
+
+        Double productPrice = cartItem.getQuantityPurchased()*cartItem.getProductPrice();
+        cart.setTotalPrice(cart.getTotalPrice()-productPrice);
+        cartRepository.save(cart);
+
+        CartDTO cartDTO=modelMapper.map(cart, CartDTO.class);
+
+        List<ProductDTO> productDTOList =
+                cart.getCartItemList()
+                        .stream()
+                        .map(Citem -> {
+                            Product p = Citem.getProduct();
+                            ProductDTO productDTO = modelMapper.map(p, ProductDTO.class);
+                            productDTO.setQuantity(Citem.getQuantityPurchased());
+                            return productDTO;
+                        })
+                        .toList();
+
+        cartDTO.setProducts(productDTOList);
+        return cartDTO;
+    }
+
     private Cart createOrFindCart(String s) {
         Cart usercart = cartRepository.findCartByUserEmail(s);
         if(usercart != null)return usercart;

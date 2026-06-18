@@ -178,6 +178,13 @@ public class ProductServiceImpl implements ProductService{
         //Let's here take special Price from user for simplicity
         dbProduct.setSpecialPrice(product.getSpecialPrice());
 
+        /* Edge Case - We have updated Our Product fields and attributes BUT*/
+        /* This product is under the Cart -> CartItem -> product therefore
+            each cartItem that has this product needs to be updated.....
+        fore */
+
+
+
         return modelMapper.map(productRepository.save(dbProduct), ProductDTO.class);
     }
 
