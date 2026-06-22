@@ -43,5 +43,17 @@ public class Product {
     @OneToMany(mappedBy = "product",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             fetch = FetchType.EAGER)
+            /*
+             CascadeType.REMOVE is intentionally not used because deleting a Product requires additional business logic,
+             such as updating Cart totalPrice.
+
+             Therefor Product deletion is handled explicitly in ProductService instead of relying on automatic cascade deletion.
+
+             If Product.getCartItemList().remove(cartItem) should automatically delete the CartItem from DB,
+             then orphanRemoval=true can be considered BUT We need to execute business logic with that thereby avoiding this.
+
+             orphanRemoval=true means if Product.cartItemsList.remove(xItem) then delete xItem from DB
+             */
+
     private List<CartItem> cartItemList;
 }

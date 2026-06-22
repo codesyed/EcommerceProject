@@ -23,7 +23,7 @@ public class Cart {
     private User user;
 
     @OneToMany(mappedBy = "cart",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE,CascadeType.REMOVE},
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
             orphanRemoval = true)
     private List<CartItem> cartItemList = new ArrayList<>();
 

@@ -2,10 +2,14 @@ package com.ecommerce.project.service;
 
 import com.ecommerce.project.exception.APIException;
 import com.ecommerce.project.exception.ResourceNotFoundException;
+import com.ecommerce.project.model.Cart;
+import com.ecommerce.project.model.CartItem;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.model.Product;
 import com.ecommerce.project.payload.ProductDTO;
 import com.ecommerce.project.payload.ProductResponse;
+import com.ecommerce.project.repositories.CartItemRepository;
+import com.ecommerce.project.repositories.CartRepository;
 import com.ecommerce.project.repositories.CategoryRepository;
 import com.ecommerce.project.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
@@ -28,7 +32,16 @@ public class ProductServiceImpl implements ProductService{
     private ProductRepository productRepository;
 
     @Autowired
+    private CartService cartService;
+
+    @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private CartRepository cartRepository;
+
+    @Autowired
+    private CartItemRepository cartItemRepository;
 
     @Autowired
     private FileService fileService; //For updating Image of Product
@@ -177,21 +190,36 @@ public class ProductServiceImpl implements ProductService{
         dbProduct.setPrice(product.getPrice());
         //Let's here take special Price from user for simplicity
         dbProduct.setSpecialPrice(product.getSpecialPrice());
+        Product savedProduct = productRepository.save(dbProduct);
 
         /* Edge Case - We have updated Our Product fields and attributes BUT*/
         /* This product is under the Cart -> CartItem -> product therefore
-            each cartItem that has this product needs to be updated.....
-        fore */
+           each cartItem + Cart(price) that has this product needs to be updated.....
+        */
 
+        //Getting All carts that used this productId - Custom Query needed
+        List<Cart> cartsList = cartRepository.findCartsByProductId(productId);
 
+        cartsList.forEach(cart -> cartService.updateCartItemInCart(cart.getCartId(), savedProduct));
 
-        return modelMapper.map(productRepository.save(dbProduct), ProductDTO.class);
+        return modelMapper.map(savedProduct, ProductDTO.class);
     }
 
     @Override
     public ProductDTO deleteService(Long productId) {
         Product dbProduct = productRepository.findById(productId)
                 .orElseThrow(()-> new ResourceNotFoundException("Product", "ProductId", productId));
+
+        /* Edge Case - We have updated Our Product fields and attributes BUT*/
+        /* This product is under the Cart -> CartItem -> product therefore
+           each cartItem + Cart(price) that has this product needs to be updated.....
+        */
+
+        //Getting All carts that used this productId - Custom Query needed
+        List<Cart> cartsList = cartRepository.findCartsByProductId(productId);
+        for(Cart cart : cartsList)
+            cartService.deleteItemsFromCart(productId, cart.getCartId());
+
         productRepository.deleteById(productId);
         return modelMapper.map(dbProduct, ProductDTO.class);
     }

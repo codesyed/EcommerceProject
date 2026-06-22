@@ -17,6 +17,7 @@ public class CartItem {
     private Long cartItemId;
 
     private Double discount;
+    /* this same filed also exists in Product Table/Entity, when Product.price is updated this too needs to*/
     private Double productPrice;
     private Integer quantityPurchased;
 

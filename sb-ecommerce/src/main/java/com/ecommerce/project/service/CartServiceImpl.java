@@ -266,6 +266,7 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
+    @Transactional
     public CartDTO deleteProductFromCart(Long productId) {
         String email=authUtil.loggedInEmail();
         Cart cart = cartRepository.findCartByUserEmail(email);
@@ -289,7 +290,7 @@ public class CartServiceImpl implements CartService{
 
         Double productPrice = cartItem.getQuantityPurchased()*cartItem.getProductPrice();
         cart.setTotalPrice(cart.getTotalPrice()-productPrice);
-        cartRepository.save(cart);
+        cartRepository.save(cart);//Can be skipped as @Transactional is used
 
         CartDTO cartDTO=modelMapper.map(cart, CartDTO.class);
 
@@ -306,6 +307,50 @@ public class CartServiceImpl implements CartService{
 
         cartDTO.setProducts(productDTOList);
         return cartDTO;
+    }
+
+    @Override
+    public void updateCartItemInCart(Long cartId, Product product) {
+
+        CartItem cartItem = cartItemRepository.
+                findCartItemByProductIdAndCartId(product.getProductId(), cartId);
+        if(cartItem==null) return;
+
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(()->new ResourceNotFoundException("Cart", "cartId", cartId));
+
+        Double prevTotal = cart.getTotalPrice();
+        Double itemsPrice = cartItem.getQuantityPurchased()* cartItem.getProductPrice();
+        cartItem.setDiscount(product.getDiscount());
+        cartItem.setProductPrice(product.getSpecialPrice());
+        cart.setTotalPrice(prevTotal-itemsPrice + (cartItem.getProductPrice()*cartItem.getQuantityPurchased()));
+
+        cartItemRepository.save(cartItem);
+        cartRepository.save(cart);
+    }
+
+    @Override
+    @Transactional
+    public void deleteItemsFromCart(Long productId, Long cartId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(()-> new ResourceNotFoundException("Product", "ProductId", productId));
+
+        CartItem cartItem = cartItemRepository.
+                findCartItemByProductIdAndCartId(product.getProductId(), cartId);
+
+        if(cartItem==null) return;
+
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(()->new ResourceNotFoundException("Cart", "cartId", cartId));
+
+        Double prevTotal = cart.getTotalPrice();
+        Double itemsPrice = cartItem.getQuantityPurchased()* cartItem.getProductPrice();
+        cart.setTotalPrice(prevTotal-itemsPrice);
+
+        cart.getCartItemList().remove(cartItem);
+        product.getCartItemList().remove(cartItem);
+        cartItemRepository.deleteById(cartItem.getCartItemId());
+        cartRepository.save(cart); //Can be skipped as @Transactional is used
     }
 
     private Cart createOrFindCart(String s) {

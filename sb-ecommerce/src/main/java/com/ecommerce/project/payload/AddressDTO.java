@@ -1,24 +1,16 @@
-package com.ecommerce.project.model;
+package com.ecommerce.project.payload;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-import java.util.ArrayList;
-import java.util.List;
-
-@Entity
 @Data
 @NoArgsConstructor
-@Table(name = "addresses")
 @AllArgsConstructor
-public class Address {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class AddressDTO {
     @Column(name = "address_id")
     private Long addressId;
 
@@ -42,15 +34,14 @@ public class Address {
     @Size(min=6, message = "pin-code must be at-least 6 characters")
     private String pincode;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    public Address(String street, String buildingName, String city, String state, String pincode) {
-        this.street = street;
-        this.buildingName = buildingName;
-        this.city = city;
-        this.state = state;
-        this.pincode = pincode;
+    @Override
+    public String toString() {
+        return "AddressDTO{" +
+                ", street='" + street + '\'' +
+                ", buildingName='" + buildingName + '\'' +
+                ", city='" + city + '\'' +
+                ", state='" + state + '\'' +
+                ", pincode='" + pincode + '\'' +
+                '}';
     }
 }
