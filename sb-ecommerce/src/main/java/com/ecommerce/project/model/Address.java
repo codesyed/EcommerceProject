@@ -39,7 +39,7 @@ public class Address {
     private String state;
 
     @NotBlank(message = "pin-code cannot be blank")
-    @Size(min=6, message = "pin-code must be at-least 6 characters")
+    @Size(min=5, message = "pin-code must be at-least 5 characters")
     private String pincode;
 
     @ManyToOne
