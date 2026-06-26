@@ -3,7 +3,6 @@ package com.ecommerce.project.service;
 import com.ecommerce.project.exception.APIException;
 import com.ecommerce.project.exception.ResourceNotFoundException;
 import com.ecommerce.project.model.Cart;
-import com.ecommerce.project.model.CartItem;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.model.Product;
 import com.ecommerce.project.payload.ProductDTO;
@@ -185,7 +184,7 @@ public class ProductServiceImpl implements ProductService{
         Product product = modelMapper.map(productDTO, Product.class);
         dbProduct.setProductName(product.getProductName());
         dbProduct.setDescription(product.getDescription());
-        dbProduct.setQuantity(product.getQuantity());
+        dbProduct.setQuantityInStock(product.getQuantityInStock());
         dbProduct.setDiscount(product.getDiscount());
         dbProduct.setPrice(product.getPrice());
         //Let's here take special Price from user for simplicity

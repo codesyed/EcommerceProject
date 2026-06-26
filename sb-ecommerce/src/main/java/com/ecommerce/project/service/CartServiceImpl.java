@@ -11,13 +11,11 @@ import com.ecommerce.project.repositories.CartItemRepository;
 import com.ecommerce.project.repositories.CartRepository;
 import com.ecommerce.project.repositories.ProductRepository;
 import com.ecommerce.project.util.AuthUtil;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +48,9 @@ public class CartServiceImpl implements CartService{
             -> Update Cart of user and save updated cart
             -> Create CartDTO from Updated Cart
             -> return CartDTO
+
+            ## IMP: Actual Product.qunatityInStock will only be reduced it order is placed after payment
+
          */
 
         //Can we use UserId instead of email?
@@ -72,11 +73,11 @@ public class CartServiceImpl implements CartService{
         if(cartItem != null)
             throw new APIException("Product "+product.getProductName()+" already exists in your Cart!!!");
 
-        if(product.getQuantity() <= 0)
+        if(product.getQuantityInStock() <= 0)
             throw new APIException("Product "+product.getProductName()+" Is out of stock!!!");
 
-        if(product.getQuantity() < quantity)
-            throw new APIException("Max Quantity in Stock for Product "+product.getProductName()+" is: "+product.getQuantity());
+        if(product.getQuantityInStock() < quantity)
+            throw new APIException("Max Quantity in Stock for Product "+product.getProductName()+" is: "+product.getQuantityInStock());
 
         //4) Creating CartItem
         CartItem newCartItem= new CartItem();
@@ -176,7 +177,7 @@ public class CartServiceImpl implements CartService{
 
                                     Product p = cartItem.getProduct();
                                     //Quantity inside Product is what is in Stock NOT user carts Quantity
-                                    p.setQuantity(cartItem.getQuantityPurchased());
+                                    p.setQuantityInStock(cartItem.getQuantityPurchased());
                                     //Here though we are updating product which we fetched from database!
                                     //Will not affect DB unless we do productRepo.save(p) because @Transactional is not used!
                                     //Here NO PERSISTENCE context and 'p' will destroy when method ends WITHOUT UPDATING DB!
@@ -228,8 +229,8 @@ public class CartServiceImpl implements CartService{
 
         int finalQuantity = cartItem.getQuantityPurchased() + updateQuantity;
 
-        if(finalQuantity > product.getQuantity())
-            throw new APIException("Max Quantity in stock for this product is : "+product.getQuantity());
+        if(finalQuantity > product.getQuantityInStock())
+            throw new APIException("Max Quantity in stock for this product is : "+product.getQuantityInStock());
 
         Double updatedCartPrice =
                         cart.getTotalPrice()

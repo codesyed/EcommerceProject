@@ -1,6 +1,7 @@
 package com.ecommerce.project.model;
 
 
+import com.ecommerce.project.payload.ProductDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,7 +25,7 @@ public class OrderItem {
     @JoinColumn(name = "order_id")
     private Order order;
 
-    private Integer quantity;
+    private Integer quantityOrdered;
 
     private Double discount;
 
